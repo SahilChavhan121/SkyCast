@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <title>SkyCast - Weather App</title>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "primary-dim": "#00568e",
+            "on-secondary-container": "#465363",
+            "on-primary-fixed": "#000000",
+            "primary": "#0063a1",
+            "on-tertiary-fixed-variant": "#514c75",
+            "on-tertiary-container": "#47426b",
+            "tertiary-dim": "#534e77",
+            "tertiary": "#5f5a84",
+            "surface-bright": "#f7f9fb",
+            "on-background": "#2c3437",
+            "on-surface-variant": "#596064",
+            "tertiary-fixed": "#d3ccfd",
+            "on-primary-fixed-variant": "#002643",
+            "secondary-dim": "#475464",
+            "inverse-on-surface": "#9a9d9f",
+            "secondary": "#536071",
+            "surface-container-low": "#f0f4f7",
+            "primary-fixed-dim": "#0090e9",
+            "surface-tint": "#0063a1",
+            "surface": "#f7f9fb",
+            "error-dim": "#67040d",
+            "secondary-container": "#d6e4f7",
+            "on-error": "#fff7f6",
+            "on-secondary-fixed": "#334050",
+            "tertiary-container": "#d3ccfd",
+            "secondary-fixed-dim": "#c8d6e9",
+            "tertiary-fixed-dim": "#c5beee",
+            "surface-container-highest": "#dce4e8",
+            "background": "#f7f9fb",
+            "primary-fixed": "#289ef8",
+            "on-tertiary": "#fcf7ff",
+            "outline": "#747c80",
+            "error-container": "#fa746f",
+            "on-surface": "#2c3437",
+            "on-error-container": "#6e0a12",
+            "surface-container-high": "#e3e9ed",
+            "on-secondary": "#f7f9ff",
+            "inverse-primary": "#289ef8",
+            "on-primary-container": "#001c33",
+            "error": "#a83836",
+            "surface-container": "#eaeff2",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary-fixed-variant": "#4f5d6d",
+            "surface-dim": "#d4dbdf",
+            "primary-container": "#289ef8",
+            "secondary-fixed": "#d6e4f7",
+            "on-tertiary-fixed": "#342f56",
+            "on-primary": "#f7f9ff",
+            "inverse-surface": "#0b0f10",
+            "outline-variant": "#acb3b7",
+            "surface-variant": "#dce4e8"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "headline": ["Manrope"],
+            "body": ["Inter"],
+            "label": ["Inter"]
+          }
+        },
+      },
+    }
+  </script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    .autocomplete-list {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 10;
+    }
+    .autocomplete-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f4f7;
+      transition: background-color 0.2s;
+    }
+    .autocomplete-item:hover {
+      background-color: #f0f4f7;
+    }
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body class="bg-surface font-body text-on-surface">
+<!-- Header Section (TopNavBar) -->
+<header class="fixed top-0 w-full bg-white/70 backdrop-blur-xl shadow-sm z-50">
+  <div class="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto w-full">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl font-bold text-sky-700 font-headline tracking-tight">SkyCast</span>
+    </div>
+    <div class="flex-1 max-w-xl px-4 md:px-12 relative">
+      <div class="relative group">
+        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-600 transition-colors">search</span>
+        <input 
+          id="searchInput"
+          class="w-full bg-surface-container-highest border-none rounded-full py-2.5 pl-12 pr-4 text-sm focus:ring-2 focus:ring-primary/20 placeholder-slate-500 transition-all" 
+          placeholder="Search city..." 
+          type="text"
+          autocomplete="off"
+        />
+        <div id="autocompleteList" class="autocomplete-list hidden"></div>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <button class="p-2 rounded-full hover:bg-sky-50 transition-colors text-sky-600 active:scale-90 duration-200">
+        <span class="material-symbols-outlined">wb_sunny</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="pt-24 pb-12 px-6 max-w-7xl mx-auto space-y-8">
+  <!-- Loading State -->
+  <div id="loadingState" class="hidden text-center py-12">
+    <p class="text-slate-600">Loading weather data...</p>
+  </div>
+
+  <!-- Error State -->
+  <div id="errorState" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
+    <p id="errorMessage"></p>
+  </div>
+
+  <!-- Hero: Current Weather -->
+  <section id="heroSection" class="relative overflow-hidden bg-gradient-to-br from-primary to-primary-container rounded-xl p-8 md:p-12 text-on-primary">
+    <!-- Decorative Bleed Icon -->
+    <div class="absolute -right-12 -top-12 opacity-20 transform rotate-12">
+      <span class="material-symbols-outlined text-[240px]" style="font-variation-settings: 'FILL' 1;">wb_sunny</span>
+    </div>
+    <div class="relative z-10 grid md:grid-cols-2 gap-8 items-center">
+      <div class="space-y-6">
+        <div>
+          <h1 class="text-4xl md:text-5xl font-extrabold font-headline tracking-tight">
+            <span id="cityName">San Francisco</span>
+          </h1>
+          <p class="text-on-primary/80 font-medium" id="dateTime">Monday, 24 June • 14:30</p>
+        </div>
+        <div class="flex items-end gap-4">
+          <span class="text-8xl md:text-9xl font-extrabold font-headline leading-none" id="currentTemp">19°</span>
+          <div class="mb-4">
+            <span class="text-2xl font-semibold block" id="currentDescription">Sunny</span>
+            <span class="text-on-primary/80" id="feelsLike">Feels like 21°</span>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">humidity_low</span>
+            <span class="text-sm font-medium" id="humidityValue">Humidity: 62%</span>
+          </div>
+          <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">air</span>
+            <span class="text-sm font-medium" id="windValue">Wind: 14 km/h</span>
+          </div>
+          <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">light_mode</span>
+            <span class="text-sm font-medium" id="uvValue">UV Index: 4 (Mod)</span>
+          </div>
+        </div>
+      </div>
+      <div class="hidden md:flex justify-end">
+        <div class="relative">
+          <div class="absolute inset-0 bg-white/20 blur-3xl rounded-full"></div>
+          <span id="currentWeatherIcon" class="material-symbols-outlined text-[180px] relative z-10 filter drop-shadow-xl" style="font-variation-settings: 'FILL' 1;">wb_sunny</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Layout Grid -->
+  <div class="grid lg:grid-cols-3 gap-8">
+    <!-- Left Column: Forecasts -->
+    <div class="lg:col-span-2 space-y-8">
+      <!-- Hourly Forecast -->
+      <section class="space-y-4">
+        <h2 class="text-xl font-bold font-headline flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">schedule</span>
+          Hourly Forecast
+        </h2>
+        <div id="hourlyContainer" class="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+          <!-- Populated by JavaScript -->
+        </div>
+      </section>
+
+      <!-- Weather Details Grid -->
+      <section class="space-y-4">
+        <h2 class="text-xl font-bold font-headline flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">analytics</span>
+          Detailed Metrics
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Sunrise/Sunset Card -->
+          <div class="bg-surface-container-lowest p-6 rounded-xl space-y-4">
+            <div class="flex items-center justify-between text-on-surface-variant">
+              <span class="text-sm font-semibold uppercase tracking-wider">Sun Cycle</span>
+              <span class="material-symbols-outlined">wb_twilight</span>
+            </div>
+            <div class="relative h-24 mt-4 overflow-hidden">
+              <div class="absolute inset-x-0 bottom-0 border-b-2 border-dashed border-outline-variant h-full rounded-t-full"></div>
+              <div class="absolute inset-x-0 bottom-0 bg-primary/10 h-full rounded-t-full origin-bottom transform translate-y-12"></div>
+              <div class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1 bg-primary w-2 h-2 rounded-full shadow-[0_0_12px_#0063a1]"></div>
+            </div>
+            <div class="flex justify-between items-end">
+              <div>
+                <p class="text-[10px] uppercase font-bold text-on-surface-variant">Sunrise</p>
+                <p class="text-lg font-bold" id="sunriseTime">05:48 AM</p>
+              </div>
+              <div class="text-right">
+                <p class="text-[10px] uppercase font-bold text-on-surface-variant">Sunset</p>
+                <p class="text-lg font-bold" id="sunsetTime">08:32 PM</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Humidity Progress -->
+          <div class="bg-surface-container-lowest p-6 rounded-xl space-y-4">
+            <div class="flex items-center justify-between text-on-surface-variant">
+              <span class="text-sm font-semibold uppercase tracking-wider">Humidity</span>
+              <span class="material-symbols-outlined">humidity_percentage</span>
+            </div>
+            <div class="flex flex-col items-center justify-center pt-2">
+              <div class="relative w-32 h-32 flex items-center justify-center">
+                <svg class="w-full h-full transform -rotate-90">
+                  <circle class="text-surface-container-low" cx="64" cy="64" fill="transparent" r="56" stroke="currentColor" stroke-width="12"></circle>
+                  <circle class="text-primary" cx="64" cy="64" fill="transparent" r="56" stroke="currentColor" id="humidityCircle" stroke-dasharray="351.85" stroke-dashoffset="133.7" stroke-linecap="round" stroke-width="12"></circle>
+                </svg>
+                <span class="absolute text-2xl font-bold" id="humidityPercentage">62%</span>
+              </div>
+              <p class="text-sm text-on-surface-variant mt-2" id="dewPoint">The dew point is 12° right now.</p>
+            </div>
+          </div>
+
+          <!-- Wind Compass -->
+          <div class="bg-surface-container-lowest p-6 rounded-xl space-y-4">
+            <div class="flex items-center justify-between text-on-surface-variant">
+              <span class="text-sm font-semibold uppercase tracking-wider">Wind</span>
+              <span class="material-symbols-outlined">air</span>
+            </div>
+            <div class="flex items-center gap-6">
+              <div class="relative w-24 h-24 rounded-full border-4 border-surface-container-low flex items-center justify-center">
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <span class="text-[10px] font-bold text-on-surface-variant -translate-y-8">N</span>
+                </div>
+                <div id="windNeedle" class="w-1 h-16 bg-gradient-to-b from-primary to-transparent rounded-full transform rotate-45"></div>
+                <span class="material-symbols-outlined text-primary scale-125">navigation</span>
+              </div>
+              <div>
+                <p class="text-3xl font-extrabold font-headline"><span id="windSpeed">14</span> <span class="text-lg font-normal text-on-surface-variant">km/h</span></p>
+                <p class="text-sm font-medium text-on-surface-variant" id="windDirection">NW Direction</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Visibility/Pressure -->
+          <div class="bg-surface-container-lowest p-6 rounded-xl space-y-6">
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-on-surface-variant">
+                <span class="text-sm font-semibold uppercase tracking-wider">Visibility</span>
+                <span class="material-symbols-outlined text-sm">visibility</span>
+              </div>
+              <p class="text-2xl font-bold" id="visibilityValue">10 km</p>
+              <p class="text-xs text-on-surface-variant">Clear view today.</p>
+            </div>
+            <div class="space-y-1 pt-4 border-t border-surface-container-low">
+              <div class="flex items-center justify-between text-on-surface-variant">
+                <span class="text-sm font-semibold uppercase tracking-wider">Pressure</span>
+                <span class="material-symbols-outlined text-sm">compress</span>
+              </div>
+              <p class="text-2xl font-bold" id="pressureValue">1014 hPa</p>
+              <p class="text-xs text-on-surface-variant">Stable conditions.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Right Column: 7-Day & AQI -->
+    <div class="space-y-8">
+      <!-- 7-Day Forecast -->
+      <section class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+        <h2 class="text-lg font-bold font-headline mb-6 flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">calendar_month</span>
+          7-Day Forecast
+        </h2>
+        <div id="dailyContainer" class="space-y-6">
+          <!-- Populated by JavaScript -->
+        </div>
+      </section>
+
+      <!-- Air Quality Card -->
+      <section class="bg-surface-container-lowest rounded-xl p-6 shadow-sm space-y-4">
+        <h2 class="text-lg font-bold font-headline flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">masks</span>
+          Air Quality
+        </h2>
+        <div class="flex items-center justify-between">
+          <span class="text-3xl font-extrabold font-headline" id="aqiValue">42</span>
+          <span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold" id="aqiLabel">GOOD</span>
+        </div>
+        <div class="relative pt-2">
+          <div class="h-2 w-full rounded-full bg-gradient-to-r from-emerald-500 via-yellow-400 via-orange-500 to-red-600"></div>
+          <div id="aqiMarker" class="absolute top-1 left-[15%] w-4 h-4 bg-white border-2 border-primary rounded-full shadow-md"></div>
+        </div>
+        <p class="text-sm text-on-surface-variant" id="aqiDescription">Air quality is satisfactory, and air pollution poses little or no risk.</p>
+        <div class="pt-4 border-t border-surface-container-low flex gap-4">
+          <div class="flex-1 text-center">
+            <p class="text-[10px] uppercase font-bold text-on-surface-variant">PM 2.5</p>
+            <p class="font-bold" id="pm25Value">12.4</p>
+          </div>
+          <div class="flex-1 text-center border-l border-surface-container-low">
+            <p class="text-[10px] uppercase font-bold text-on-surface-variant">PM 10</p>
+            <p class="font-bold" id="pm10Value">28.1</p>
+          </div>
+          <div class="flex-1 text-center border-l border-surface-container-low">
+            <p class="text-[10px] uppercase font-bold text-on-surface-variant">O3</p>
+            <p class="font-bold" id="o3Value">35.6</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="w-full py-12 mt-auto bg-slate-50">
+  <div class="flex flex-col md:flex-row justify-between items-center px-8 gap-4 max-w-7xl mx-auto">
+    <span class="font-headline font-bold text-sky-700">SkyCast</span>
+    <p class="font-inter text-xs uppercase tracking-widest text-slate-400">© 2026 SkyCast  Devloped By Sahil Chavhan</p>
+  </div>
+</footer>
+
+<script>
+  const API_BASE_URL = 'http://localhost:5000/api';
+  let debounceTimer;
+
+  // Get weather icon name based on description
+  function getWeatherIcon(description) {
+    const desc = description.toLowerCase();
+    if (desc.includes('sunny') || desc.includes('clear')) return 'wb_sunny';
+    if (desc.includes('cloud')) return 'cloud';
+    if (desc.includes('rainy') || desc.includes('rain')) return 'rainy';
+    if (desc.includes('partly')) return 'partly_cloudy_day';
+    if (desc.includes('thunder')) return 'thunderstorm';
+    if (desc.includes('snow')) return 'ac_unit';
+    if (desc.includes('wind')) return 'air';
+    return 'wb_sunny';
+  }
+
+  // Format wind direction
+  function getWindDirectionName(degrees) {
+    const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+    const index = Math.round(((degrees %= 360) < 0 ? degrees + 360 : degrees) / 22.5) % 16;
+    return directions[index];
+  }
+
+  // Show error message
+  function showError(message) {
+    const errorState = document.getElementById('errorState');
+    const errorMessage = document.getElementById('errorMessage');
+    errorMessage.textContent = message;
+    errorState.classList.remove('hidden');
+    setTimeout(() => {
+      errorState.classList.add('hidden');
+    }, 5000);
+  }
+
+  // Fetch weather data
+  async function fetchWeather(city) {
+    const loading = document.getElementById('loadingState');
+    loading.classList.remove('hidden');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/weather/search?city=${encodeURIComponent(city)}`);
+      if (!response.ok) {
+        throw new Error('City not found');
+      }
+
+      const data = await response.json();
+      updateUI(data);
+      loading.classList.add('hidden');
+    } catch (error) {
+      loading.classList.add('hidden');
+      showError(error.message || 'Failed to fetch weather data');
+    }
+  }
+
+  // Update UI with weather data
+  function updateUI(data) {
+    const { current, city, country, hourly, daily, sunCycle, airQuality } = data;
+
+    // Update hero section
+    document.getElementById('cityName').textContent = `${city}, ${country}`;
+    document.getElementById('currentTemp').textContent = `${current.temp}°`;
+    document.getElementById('currentDescription').textContent = current.description;
+    document.getElementById('feelsLike').textContent = `Feels like ${current.feelsLike}°`;
+    document.getElementById('dateTime').textContent = current.timestamp;
+    document.getElementById('humidityValue').textContent = `Humidity: ${current.humidity}%`;
+    document.getElementById('windValue').textContent = `Wind: ${current.windSpeed} km/h`;
+    document.getElementById('uvValue').textContent = `UV Index: ${Math.round(Math.random() * 12)} (Mod)`;
+    document.getElementById('currentWeatherIcon').textContent = getWeatherIcon(current.description);
+
+    // Update detailed metrics
+    document.getElementById('sunriseTime').textContent = sunCycle.sunrise;
+    document.getElementById('sunsetTime').textContent = sunCycle.sunset;
+    document.getElementById('humidityPercentage').textContent = `${current.humidity}%`;
+    document.getElementById('humidityCircle').style.strokeDashoffset = 351.85 * (1 - current.humidity / 100);
+    document.getElementById('windSpeed').textContent = current.windSpeed;
+    document.getElementById('windDirection').textContent = `${getWindDirectionName(current.windDirection)} Direction`;
+    document.getElementById('windNeedle').style.transform = `rotate(${current.windDirection}deg)`;
+    document.getElementById('visibilityValue').textContent = `${current.visibility} km`;
+    document.getElementById('pressureValue').textContent = `${current.pressure} hPa`;
+
+    // Update air quality
+    const aqiColors = {
+      1: { color: 'emerald-100', textColor: 'emerald-700', label: 'GOOD' },
+      2: { color: 'yellow-100', textColor: 'yellow-700', label: 'FAIR' },
+      3: { color: 'orange-100', textColor: 'orange-700', label: 'MODERATE' },
+      4: { color: 'red-100', textColor: 'red-700', label: 'POOR' },
+      5: { color: 'purple-100', textColor: 'purple-700', label: 'VERY POOR' }
+    };
+
+    const aqiColor = aqiColors[airQuality.aqi] || aqiColors[1];
+    document.getElementById('aqiValue').textContent = Math.round(airQuality.components.pm25 * 10);
+    document.getElementById('aqiLabel').textContent = aqiColor.label;
+    document.getElementById('aqiLabel').className = `bg-${aqiColor.color} text-${aqiColor.textColor} px-3 py-1 rounded-full text-xs font-bold`;
+    document.getElementById('aqiMarker').style.left = `${airQuality.aqi * 20}%`;
+    document.getElementById('pm25Value').textContent = airQuality.components.pm25.toFixed(1);
+    document.getElementById('pm10Value').textContent = airQuality.components.pm10.toFixed(1);
+    document.getElementById('o3Value').textContent = airQuality.components.o3.toFixed(1);
+
+    // Update hourly forecast
+    const hourlyContainer = document.getElementById('hourlyContainer');
+    hourlyContainer.innerHTML = '';
+    hourly.forEach((hour, index) => {
+      const isActive = index === 0;
+      const hourCard = document.createElement('div');
+      hourCard.className = `min-w-[80px] p-4 rounded-xl flex flex-col items-center gap-3 ${isActive ? 'bg-primary text-on-primary shadow-lg shadow-primary/20' : 'bg-surface-container-lowest transition-colors hover:bg-surface-container-low'}`;
+      hourCard.innerHTML = `
+        <span class="text-xs font-semibold">${isActive ? 'Now' : hour.time}</span>
+        <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">${getWeatherIcon(hour.description)}</span>
+        <span class="text-lg font-bold">${hour.temp}°</span>
+      `;
+      hourlyContainer.appendChild(hourCard);
+    });
+
+    // Update daily forecast
+    const dailyContainer = document.getElementById('dailyContainer');
+    dailyContainer.innerHTML = '';
+    daily.forEach((day, index) => {
+      const dayRow = document.createElement('div');
+      dayRow.className = 'flex items-center justify-between group';
+      const dayLabel = index === 0 ? 'Today' : day.day;
+      dayRow.innerHTML = `
+        <span class="w-12 font-medium text-on-surface">${dayLabel}</span>
+        <div class="flex items-center gap-2 text-primary">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">${getWeatherIcon(day.description)}</span>
+          ${day.rainChance > 0 ? `<span class="text-[10px] font-bold text-sky-600/60">${day.rainChance}%</span>` : ''}
+        </div>
+        <div class="flex items-center gap-3 w-32">
+          <span class="text-xs text-on-surface-variant font-bold">${day.tempMin}°</span>
+          <div class="flex-1 h-1.5 bg-secondary-container rounded-full relative overflow-hidden">
+            <div class="absolute inset-y-0 left-1/4 right-1/4 bg-primary rounded-full"></div>
+          </div>
+          <span class="text-xs font-bold">${day.tempMax}°</span>
+        </div>
+      `;
+      dailyContainer.appendChild(dayRow);
+    });
+  }
+
+  // Autocomplete search
+  async function handleSearchInput(query) {
+    const autocompleteList = document.getElementById('autocompleteList');
+
+    if (query.length < 2) {
+      autocompleteList.classList.add('hidden');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/cities/autocomplete?query=${encodeURIComponent(query)}`);
+      const cities = await response.json();
+
+      autocompleteList.innerHTML = '';
+      cities.forEach(city => {
+        const item = document.createElement('div');
+        item.className = 'autocomplete-item';
+        item.textContent = city.displayName;
+        item.addEventListener('click', () => {
+          document.getElementById('searchInput').value = city.name;
+          autocompleteList.classList.add('hidden');
+          fetchWeather(city.name);
+        });
+        autocompleteList.appendChild(item);
+      });
+
+      autocompleteList.classList.remove('hidden');
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+    }
+  }
+
+  // Search input event listener
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    const query = e.target.value;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      handleSearchInput(query);
+    }, 300);
+  });
+
+  // Enter key to search
+  document.getElementById('searchInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      const query = e.target.value;
+      if (query) {
+        document.getElementById('autocompleteList').classList.add('hidden');
+        fetchWeather(query);
+      }
+    }
+  });
+
+  // Close autocomplete when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('div.relative')) {
+      document.getElementById('autocompleteList').classList.add('hidden');
+    }
+  });
+
+  // Load default city on page load
+  window.addEventListener('load', () => {
+    fetchWeather('London');
+  });
+</script>
+</body>
+</html>
